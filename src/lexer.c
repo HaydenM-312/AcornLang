@@ -61,8 +61,9 @@ static int parse_char(char c1, char c2) {
 }
 
 static int get_keyword(int k) {
-	if (k <= 7) return k + 7;
-	return k + 29;
+	if (k <= 5) 	 return k + 7;
+	else if (k <= 7) return k + 11;
+	return k + 21;
 }
 
 token generate_token(enum TOKEN_TYPE _type, void* _data, int _line, int _column) {
