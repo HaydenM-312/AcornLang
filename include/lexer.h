@@ -52,7 +52,8 @@ enum TOKEN_TYPE {
 
 #define IS_MULTI_CHAR(t) t == TT_LARROW || t == TT_RARROW || (t >= TT_DEQ && t <= TT_GEQ)
 #define IS_BIN_OP(t) t >= TT_EQU && t <= TT_STAR
-#define IS_FRONT_BIN_OP(t) t >= TT_FOR && t <= TT_UNTIL
+#define IS_FRONT_BIN_OP(t) t >= TT_IF && t <= TT_UNTIL
+#define IS_VALUE(t) t >= TT_INTEGER && t <= TT_ID
 
 typedef struct __token {
 	enum TOKEN_TYPE type;
