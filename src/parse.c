@@ -2,6 +2,9 @@
 
 int	is_higher_pres(int a, int b) {
 	switch (a) {
+		case TT_AND:
+		case TT_OR:
+			return b > TT_OR;
 		case TT_IF:
 		case TT_ELIF:
 		case TT_ELSE:
@@ -64,6 +67,8 @@ char* name_token(int t) {
 		case TT_FOR: return "for";
 		case TT_WHILE: return "while";
 		case TT_UNTIL: return "until";
+		case TT_AND: return "and";
+		case TT_OR: return "or";
 		default: return "[?]";
 	}
 }
@@ -125,8 +130,11 @@ ast_node parse_expr(ast_node proto_AST) {
 				append_node(&(AST.children[AST.child_count - 1]), proto_AST.children[++i]);
 				remove_node(&AST, AST.child_count - 2);
 			}
-		}
-		else {
+		} else if (IS_FRONT_BIN_OP(proto_AST.children[i].node.type)) {
+				append_node(&AST, proto_AST.children[i]);
+				append_node(&(AST.children[AST.child_count - 1]), proto_AST.children[++i]);
+				append_node(&(AST.children[AST.child_count - 1]), proto_AST.children[++i]);
+		} else {
 			append_node(&AST, proto_AST.children[i]);
 		}
 	}
@@ -134,8 +142,27 @@ ast_node parse_expr(ast_node proto_AST) {
 	return AST;
 }
 
+ast_node parse_funcs(ast_node proto_AST) {
+	ast_node AST = generate_node(proto_AST.node);
+
+	for (int i = 0; i < proto_AST.child_count; i++) {
+		printf("%i\n", i);
+		append_node(&AST, proto_AST.children[i]);
+		if (proto_AST.children[i].node.type == TT_ID) {
+			int start_line = proto_AST.children[i].node.line;
+			i++;
+			while (proto_AST.children[i].node.line == start_line && IS_VALUE(proto_AST.children[i].node.type)) {
+				append_node(&(AST.children[AST.child_count - 1]), proto_AST.children[i++]);
+			}
+			i--;
+		}
+	}
+	return AST;
+}
+
 ast_node parse(token_list tlist) {
 	ast_node proto_AST = generate_node(tlist.list[0]);
+	ast_node mid_AST;
 	ast_node AST;
 
 	// Parse any parenthesised sections first
@@ -166,25 +193,39 @@ ast_node parse(token_list tlist) {
 
 			i--;
 			free_token_list(&sublist);
+		} else if (tlist.list[i].type == TT_LBRACKET) {
+			token_list sublist;
+			int lparen_pos[] = {tlist.list[i].line, tlist.list[i].column};
+			int paren_count = 1;
+
+			generate_token_list(&sublist, tlist.list[i++]);
+			while (paren_count > 0) {
+				switch (tlist.list[i].type) {
+					case TT_RBRACKET:
+						paren_count--;
+						break;
+					case TT_LBRACKET:
+						paren_count++;
+						break;
+					case TT_EOF:
+						error(5, lparen_pos);
+						break;
+				}
+				if (paren_count > 0) append_token_list(&sublist, tlist.list[i]);
+				i++;
+			}
+			ast_node p_sublist = parse(sublist);
+			append_node(&proto_AST, p_sublist);
+
+			i--;
+			free_token_list(&sublist);
 		} else {
 			append_node(&proto_AST, generate_node(tlist.list[i]));
 		}
 	}
 
-	AST = parse_expr(proto_AST);
+	mid_AST = parse_funcs(proto_AST);
+	AST = parse_expr(mid_AST);
 
 	return AST;
 }
-
-/*
-num = 2 + 3 * 5
-
-num
-= num
-= num 2
-= num (+ 2)
-= num (+ 2 3)
-= num (+ 2 (* 3))
-= num (+ 2 (* 3 5))
-
-*/
