@@ -146,7 +146,6 @@ ast_node parse_funcs(ast_node proto_AST) {
 	ast_node AST = generate_node(proto_AST.node);
 
 	for (int i = 0; i < proto_AST.child_count; i++) {
-		printf("%i\n", i);
 		append_node(&AST, proto_AST.children[i]);
 		if (proto_AST.children[i].node.type == TT_ID) {
 			int start_line = proto_AST.children[i].node.line;
