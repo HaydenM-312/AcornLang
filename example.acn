@@ -1,8 +1,0 @@
-sum start finish = [
-	i = start
-	total = 0
-	while i < finish [
-		i = i + 1
-		total = total + i
-	]
-]
