@@ -5,6 +5,7 @@
 #include "astnode.h"
 
 ast_node	parse			(token_list);
+ast_node	parse_funcs		(ast_node);
 ast_node	parse_expr		(ast_node);
 int			is_higher_pres	(int, int);
 
