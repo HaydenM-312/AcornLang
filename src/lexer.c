@@ -26,6 +26,8 @@ static int parse_char(char c1, char c2) {
 		case ')': return TT_RPAREN;
 		case '[': return TT_LBRACKET;
 		case ']': return TT_RBRACKET;
+		case '{': return TT_LCURLY;
+		case '}': return TT_RCURLY;
 		case '+': return TT_PLUS;
 		case '-': {
 			switch (c2) {
