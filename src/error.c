@@ -26,5 +26,5 @@ void error(int err_no, void* data) {
 }
 
 void mark() {
-	printf("!\n");
+	printf("\t[Marked]\n");
 }
