@@ -6,12 +6,12 @@ int	is_higher_pres(int a, int b) {
 			return b > TT_AND;
 		case TT_OR:
 			return b > TT_OR;
-		case TT_IF:
-			return b > TT_IF;
-		case TT_ELIF:
-			return b > TT_ELIF;
 		case TT_ELSE:
 			return b > TT_ELSE;
+		case TT_ELIF:
+			return b > TT_ELIF;
+		case TT_IF:
+			return b > TT_IF;
 		case TT_FOR:
 		case TT_WHILE:
 		case TT_UNTIL:
@@ -135,6 +135,7 @@ ast_node parse_token(ast_node* AST, ast_node proto_AST, int* pos, ast_node** mar
 			remove_node(AST, AST->child_count - 2);
 		}
 	} else if (IS_FRONT_BIN_OP(proto_AST.children[*pos].node.type)) {
+		if (AST->child_count > 0) printf("%i, %i, %i\n", AST->children[AST->child_count - 1].node.type, proto_AST.children[*pos].node.type, is_higher_pres(AST->children[AST->child_count - 1].node.type, proto_AST.children[*pos].node.type));
 		if (AST->child_count > 0 && is_higher_pres(AST->children[AST->child_count - 1].node.type, proto_AST.children[*pos].node.type)) {
 			ast_node* final_node_address;
 			final_node_address = &(AST->children[AST->child_count - 1]);
@@ -158,11 +159,13 @@ ast_node parse_token(ast_node* AST, ast_node proto_AST, int* pos, ast_node** mar
 		}
 	} else if (IS_UNARY(proto_AST.children[*pos].node.type)) {
 		append_node(AST, proto_AST.children[*pos]);
-		append_node(&(AST->children[AST->child_count - 1]), proto_AST.children[++(*pos)]);
+		(*pos)++;
+		parse_token(&(AST->children[AST->child_count - 1]), proto_AST, pos, &sub_mark_addr);
 	}  else if (proto_AST.children[*pos].node.type == TT_ID) {
 		append_node(AST, proto_AST.children[*pos]);
-		while (IS_VALUE(proto_AST.children[(*pos)+1].node.type) && AST->children[AST->child_count - 1].node.line == proto_AST.children[(*pos)+1].node.line) 
-			append_node(&(AST->children[AST->child_count - 1]), proto_AST.children[++(*pos)]);
+		int starting_line = AST->children[AST->child_count - 1].node.line;
+		while (starting_line == proto_AST.children[(*pos)+1].node.line && IS_VALUE(proto_AST.children[(*pos)+1].node.type)) {
+			append_node(&(AST->children[AST->child_count - 1]), proto_AST.children[++(*pos)]);}
 	} else if (*mark_addr != NULL) {
 		parse_token(*mark_addr, proto_AST, pos, &sub_mark_addr);
 		*mark_addr = NULL;

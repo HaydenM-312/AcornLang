@@ -17,9 +17,9 @@ enum TOKEN_TYPE {
 		TT_BOOLEAN,
 		TT_ID,
 	// Ternary Operators
-		TT_IF,
-		TT_ELIF,
 		TT_ELSE,
+		TT_ELIF,
+		TT_IF,
 	// Binary Operators
 		TT_FOR,
 		TT_WHILE,
@@ -54,7 +54,7 @@ enum TOKEN_TYPE {
 
 #define IS_MULTI_CHAR(t) t == TT_LARROW || t == TT_RARROW || (t >= TT_DEQ && t <= TT_GEQ)
 #define IS_BIN_OP(t) t >= TT_EQU && t <= TT_STAR
-#define IS_FRONT_BIN_OP(t) t >= TT_IF && t <= TT_UNTIL && t != TT_ELSE
+#define IS_FRONT_BIN_OP(t) t >= TT_ELIF && t <= TT_UNTIL
 #define IS_UNARY(t) (t >= TT_NOT && t <= TT_TYPE) || t == TT_ELSE
 #define IS_BRACKET(t) t >= TT_LPAREN && t <= TT_RCURLY
 #define IS_VALUE(t) t >= TT_INTEGER && t <= TT_ID ||IS_BRACKET(t)
@@ -73,9 +73,9 @@ typedef struct __token_list {
 } token_list;
 
 static char* keyword_list[] = {
-	"if",
-	"elif",
 	"else",
+	"elif",
+	"if",
 	"for",
 	"while",
 	"until",
