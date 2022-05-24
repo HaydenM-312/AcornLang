@@ -2,6 +2,11 @@
 
 int	is_higher_pres(int a, int b) {
 	switch (a) {
+		case TT_NOT:
+		case TT_PTR:
+		case TT_ADDR:
+		case TT_TYPE:
+			return b > TT_TYPE;
 		case TT_AND:
 			return b > TT_AND;
 		case TT_OR:
@@ -63,6 +68,8 @@ char* name_token(int t) {
 		case TT_SOF: return "SOF";
 		case TT_EOF: return "EOF";
 		case TT_NOT: return "not";
+		case TT_PTR: return "ptr";
+		case TT_ADDR: return "addr";
 		case TT_TYPE: return "type";
 		case TT_IF: return "if";
 		case TT_ELIF: return "elif";
@@ -112,7 +119,10 @@ void print_ast(ast_node tree, int depth) {
 
 ast_node parse_token(ast_node* AST, ast_node proto_AST, int* pos, ast_node** mark_addr) {
 	ast_node* sub_mark_addr = NULL;
-	if (IS_BIN_OP(proto_AST.children[*pos].node.type)) {
+	if (*mark_addr != NULL) {
+		parse_token(*mark_addr, proto_AST, pos, &sub_mark_addr);
+		*mark_addr = NULL;
+	} else if (IS_BIN_OP(proto_AST.children[*pos].node.type)) {
 		if (AST->child_count > 0 && is_higher_pres(AST->children[AST->child_count - 1].node.type, proto_AST.children[*pos].node.type)) {
 			ast_node* final_node_address;
 			final_node_address = &(AST->children[AST->child_count - 1]);
@@ -135,7 +145,6 @@ ast_node parse_token(ast_node* AST, ast_node proto_AST, int* pos, ast_node** mar
 			remove_node(AST, AST->child_count - 2);
 		}
 	} else if (IS_FRONT_BIN_OP(proto_AST.children[*pos].node.type)) {
-		if (AST->child_count > 0) printf("%i, %i, %i\n", AST->children[AST->child_count - 1].node.type, proto_AST.children[*pos].node.type, is_higher_pres(AST->children[AST->child_count - 1].node.type, proto_AST.children[*pos].node.type));
 		if (AST->child_count > 0 && is_higher_pres(AST->children[AST->child_count - 1].node.type, proto_AST.children[*pos].node.type)) {
 			ast_node* final_node_address;
 			final_node_address = &(AST->children[AST->child_count - 1]);
@@ -158,6 +167,20 @@ ast_node parse_token(ast_node* AST, ast_node proto_AST, int* pos, ast_node** mar
 			parse_token(&(AST->children[AST->child_count - 1]), proto_AST, pos, &sub_mark_addr);
 		}
 	} else if (IS_UNARY(proto_AST.children[*pos].node.type)) {
+		
+		if (AST->child_count > 0 && is_higher_pres(AST->children[AST->child_count - 1].node.type, proto_AST.children[*pos].node.type)) {
+			ast_node* final_node_address;
+			final_node_address = &(AST->children[AST->child_count - 1]);
+			
+			while(is_higher_pres(final_node_address->children[final_node_address->child_count - 1].node.type, proto_AST.children[*pos].node.type)) {
+				final_node_address = &(final_node_address->children[final_node_address->child_count - 1]);
+			}
+
+			append_node(final_node_address, proto_AST.children[*pos]);
+			remove_node(final_node_address, 1);
+
+			*mark_addr = &(final_node_address->children[final_node_address->child_count-1]);
+		}
 		append_node(AST, proto_AST.children[*pos]);
 		(*pos)++;
 		parse_token(&(AST->children[AST->child_count - 1]), proto_AST, pos, &sub_mark_addr);
@@ -166,9 +189,6 @@ ast_node parse_token(ast_node* AST, ast_node proto_AST, int* pos, ast_node** mar
 		int starting_line = AST->children[AST->child_count - 1].node.line;
 		while (starting_line == proto_AST.children[(*pos)+1].node.line && IS_VALUE(proto_AST.children[(*pos)+1].node.type)) {
 			append_node(&(AST->children[AST->child_count - 1]), proto_AST.children[++(*pos)]);}
-	} else if (*mark_addr != NULL) {
-		parse_token(*mark_addr, proto_AST, pos, &sub_mark_addr);
-		*mark_addr = NULL;
 	} else {
 		append_node(AST, proto_AST.children[*pos]);
 	}
@@ -178,8 +198,8 @@ ast_node parse_expr(ast_node proto_AST) {
 	ast_node AST = generate_node(proto_AST.node);
 	ast_node* mark_addr = NULL; 
 	for (int i = 0; i < proto_AST.child_count; i++) {
-	//	print_ast(AST, 0);
-	//	printf("-----------------\n");
+		print_ast(AST, 0);
+		printf("-----------------\n");
 		parse_token(&AST, proto_AST, &i, &mark_addr);
 	}
 
