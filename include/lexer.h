@@ -42,6 +42,8 @@ enum TOKEN_TYPE {
 		TT_STAR,
 	// Unary operators
 		TT_NOT,
+		TT_PTR,
+		TT_ADDR,
 		TT_TYPE,
 	// Parentheses
 		TT_LPAREN,
@@ -82,6 +84,8 @@ static char* keyword_list[] = {
 	"or",
 	"and",
 	"not",
+	"ptr",
+	"addr",
 	"type",
 	'\0'
 };
