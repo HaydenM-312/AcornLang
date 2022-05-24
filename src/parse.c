@@ -3,10 +3,13 @@
 int	is_higher_pres(int a, int b) {
 	switch (a) {
 		case TT_AND:
+			return b > TT_AND;
 		case TT_OR:
 			return b > TT_OR;
 		case TT_IF:
+			return b > TT_IF;
 		case TT_ELIF:
+			return b > TT_ELIF;
 		case TT_ELSE:
 			return b > TT_ELSE;
 		case TT_FOR:
@@ -69,6 +72,8 @@ char* name_token(int t) {
 		case TT_UNTIL: return "until";
 		case TT_AND: return "and";
 		case TT_OR: return "or";
+		case TT_LCURLY: return "{";
+		case TT_RCURLY: return "}";
 		default: return "[?]";
 	}
 }
@@ -76,7 +81,7 @@ char* name_token(int t) {
 void print_token(token t) {
 	switch (t.type) {
 	case TT_ID:
-		printf("id:  %s", (char*)t.data);
+		printf("id: %s", (char*)t.data);
 		break;
 	case TT_INTEGER:
 		printf("int: %i", (int)t.data);
@@ -96,7 +101,7 @@ void print_ast(ast_node tree, int depth) {
 	for (int i = 0; i < depth; i++) {
 		printf("|  ");
 	}
-	printf("|-- ");
+	printf("|- ");
 	print_token(tree.node);
 	printf("\n");
 
@@ -105,111 +110,99 @@ void print_ast(ast_node tree, int depth) {
 	}
 }
 
-ast_node parse_expr(ast_node proto_AST) {
-	ast_node AST = generate_node(proto_AST.node);
-
-	for (int i = 0; i < proto_AST.child_count; i++) {
-		if (IS_BIN_OP(proto_AST.children[i].node.type)) {
-			if (is_higher_pres(AST.children[AST.child_count - 1].node.type, proto_AST.children[i].node.type)) {
-				ast_node* final_node_address = &(AST.children[AST.child_count - 1]);
-				
-				while(is_higher_pres(final_node_address->children[final_node_address->child_count - 1].node.type, proto_AST.children[i].node.type)) {
-					final_node_address = &(final_node_address->children[final_node_address->child_count - 1]);
-				}
-
-				append_node(final_node_address, proto_AST.children[i]);
-				append_node(&(final_node_address->children[final_node_address->child_count-1]), 
-								final_node_address->children[final_node_address->child_count-2]);
-				append_node(&(final_node_address->children[final_node_address->child_count-1]), 
-								proto_AST.children[++i]);
-				remove_node(final_node_address, 1);
-
-			} else {
-				append_node(&AST, proto_AST.children[i]);
-				append_node(&(AST.children[AST.child_count - 1]), AST.children[AST.child_count - 2]);
-				append_node(&(AST.children[AST.child_count - 1]), proto_AST.children[++i]);
-				remove_node(&AST, AST.child_count - 2);
+ast_node parse_token(ast_node* AST, ast_node proto_AST, int* pos, ast_node** mark_addr) {
+	ast_node* sub_mark_addr = NULL;
+	if (IS_BIN_OP(proto_AST.children[*pos].node.type)) {
+		if (AST->child_count > 0 && is_higher_pres(AST->children[AST->child_count - 1].node.type, proto_AST.children[*pos].node.type)) {
+			ast_node* final_node_address;
+			final_node_address = &(AST->children[AST->child_count - 1]);
+			
+			while(is_higher_pres(final_node_address->children[final_node_address->child_count - 1].node.type, proto_AST.children[*pos].node.type)) {
+				final_node_address = &(final_node_address->children[final_node_address->child_count - 1]);
 			}
-		} else if (IS_FRONT_BIN_OP(proto_AST.children[i].node.type)) {
-				append_node(&AST, proto_AST.children[i]);
-				append_node(&(AST.children[AST.child_count - 1]), proto_AST.children[++i]);
-				append_node(&(AST.children[AST.child_count - 1]), proto_AST.children[++i]);
-		} else {
-			append_node(&AST, proto_AST.children[i]);
-		}
-	}
 
-	return AST;
+			append_node(final_node_address, proto_AST.children[*pos]);
+			append_node(&(final_node_address->children[final_node_address->child_count-1]), 
+							final_node_address->children[final_node_address->child_count-2]);
+			remove_node(final_node_address, 1);
+
+			*mark_addr = &(final_node_address->children[final_node_address->child_count-1]);
+		} else {
+			append_node(AST, proto_AST.children[*pos]);
+			append_node(&(AST->children[AST->child_count - 1]), AST->children[AST->child_count - 2]);
+			(*pos)++;
+			parse_token(&(AST->children[AST->child_count - 1]), proto_AST, pos, &sub_mark_addr);
+			remove_node(AST, AST->child_count - 2);
+		}
+	} else if (IS_FRONT_BIN_OP(proto_AST.children[*pos].node.type)) {
+		if (AST->child_count > 0 && is_higher_pres(AST->children[AST->child_count - 1].node.type, proto_AST.children[*pos].node.type)) {
+			ast_node* final_node_address;
+			final_node_address = &(AST->children[AST->child_count - 1]);
+			
+			while(is_higher_pres(final_node_address->children[final_node_address->child_count - 1].node.type, proto_AST.children[*pos].node.type)) {
+				final_node_address = &(final_node_address->children[final_node_address->child_count - 1]);
+			}
+
+			append_node(final_node_address, proto_AST.children[*pos]);
+			append_node(&(final_node_address->children[final_node_address->child_count-1]), 
+							proto_AST.children[++(*pos)]);
+			remove_node(final_node_address, 1);
+
+			*mark_addr = &(final_node_address->children[final_node_address->child_count-1]);
+		} else {
+			append_node(AST, proto_AST.children[*pos]);
+			(*pos)++;
+			parse_token(&(AST->children[AST->child_count - 1]), proto_AST, pos, &sub_mark_addr);
+			(*pos)++;
+			parse_token(&(AST->children[AST->child_count - 1]), proto_AST, pos, &sub_mark_addr);
+		}
+	} else if (IS_UNARY(proto_AST.children[*pos].node.type)) {
+		append_node(AST, proto_AST.children[*pos]);
+		append_node(&(AST->children[AST->child_count - 1]), proto_AST.children[++(*pos)]);
+	}  else if (proto_AST.children[*pos].node.type == TT_ID) {
+		append_node(AST, proto_AST.children[*pos]);
+		while (IS_VALUE(proto_AST.children[(*pos)+1].node.type) && AST->children[AST->child_count - 1].node.line == proto_AST.children[(*pos)+1].node.line) 
+			append_node(&(AST->children[AST->child_count - 1]), proto_AST.children[++(*pos)]);
+	} else if (*mark_addr != NULL) {
+		parse_token(*mark_addr, proto_AST, pos, &sub_mark_addr);
+		*mark_addr = NULL;
+	} else {
+		append_node(AST, proto_AST.children[*pos]);
+	}
 }
 
-ast_node parse_funcs(ast_node proto_AST) {
+ast_node parse_expr(ast_node proto_AST) {
 	ast_node AST = generate_node(proto_AST.node);
-
+	ast_node* mark_addr = NULL; 
 	for (int i = 0; i < proto_AST.child_count; i++) {
-		append_node(&AST, proto_AST.children[i]);
-		if (proto_AST.children[i].node.type == TT_ID) {
-			int start_line = proto_AST.children[i].node.line;
-			i++;
-			while (proto_AST.children[i].node.line == start_line && IS_VALUE(proto_AST.children[i].node.type)) {
-				append_node(&(AST.children[AST.child_count - 1]), proto_AST.children[i++]);
-			}
-			i--;
-		}
+	//	print_ast(AST, 0);
+	//	printf("-----------------\n");
+		parse_token(&AST, proto_AST, &i, &mark_addr);
 	}
+
 	return AST;
 }
 
 ast_node parse(token_list tlist) {
 	ast_node proto_AST = generate_node(tlist.list[0]);
-	ast_node mid_AST;
 	ast_node AST;
 
 	// Parse any parenthesised sections first
 	for (int i = 1; i < tlist.real_len; i++) {
-		if (tlist.list[i].type == TT_LPAREN) {
+		if (IS_BRACKET(tlist.list[i].type)) {
 			token_list sublist;
 			int lparen_pos[] = {tlist.list[i].line, tlist.list[i].column};
 			int paren_count = 1;
+			const int original_type = tlist.list[i].type;
 
 			generate_token_list(&sublist, tlist.list[i++]);
 			while (paren_count > 0) {
-				switch (tlist.list[i].type) {
-					case TT_RPAREN:
-						paren_count--;
-						break;
-					case TT_LPAREN:
-						paren_count++;
-						break;
-					case TT_EOF:
-						error(5, lparen_pos);
-						break;
-				}
-				if (paren_count > 0) append_token_list(&sublist, tlist.list[i]);
-				i++;
-			}
-			ast_node p_sublist = parse(sublist);
-			append_node(&proto_AST, p_sublist);
-
-			i--;
-			free_token_list(&sublist);
-		} else if (tlist.list[i].type == TT_LBRACKET) {
-			token_list sublist;
-			int lparen_pos[] = {tlist.list[i].line, tlist.list[i].column};
-			int paren_count = 1;
-
-			generate_token_list(&sublist, tlist.list[i++]);
-			while (paren_count > 0) {
-				switch (tlist.list[i].type) {
-					case TT_RBRACKET:
-						paren_count--;
-						break;
-					case TT_LBRACKET:
-						paren_count++;
-						break;
-					case TT_EOF:
-						error(5, lparen_pos);
-						break;
-				}
+				if (tlist.list[i].type == original_type + 1)
+					paren_count--;
+				else if (tlist.list[i].type == original_type)
+					paren_count++;
+				else if (tlist.list[i].type == TT_EOF)
+					error(5, lparen_pos);
 				if (paren_count > 0) append_token_list(&sublist, tlist.list[i]);
 				i++;
 			}
@@ -223,8 +216,7 @@ ast_node parse(token_list tlist) {
 		}
 	}
 
-	mid_AST = parse_funcs(proto_AST);
-	AST = parse_expr(mid_AST);
+	AST = parse_expr(proto_AST);
 
 	return AST;
 }
