@@ -28,6 +28,7 @@ static int parse_char(char c1, char c2) {
 		case ']': return TT_RBRACKET;
 		case '{': return TT_LCURLY;
 		case '}': return TT_RCURLY;
+		case ',': return TT_COMMA;
 		case '+': return TT_PLUS;
 		case '-': {
 			switch (c2) {
@@ -63,9 +64,9 @@ static int parse_char(char c1, char c2) {
 }
 
 static int get_keyword(int k) {
-	if (k <= 5) 	 return k + 7;
-	else if (k <= 7) return k + 11;
-	return k + 21;
+	if (k <= 5) 	 return k + 8;
+	else if (k <= 7) return k + 12;
+	return k + 22;
 }
 
 token generate_token(enum TOKEN_TYPE _type, void* _data, int _line, int _column) {
