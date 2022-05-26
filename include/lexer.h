@@ -11,6 +11,7 @@ enum TOKEN_TYPE {
 		TT_EOF,
 		TT_SOF,
 		TT_EOL,
+		TT_COMMA,
 	// Literals
 		TT_INTEGER,
 		TT_STRING,
@@ -59,7 +60,7 @@ enum TOKEN_TYPE {
 #define IS_FRONT_BIN_OP(t) t >= TT_ELIF && t <= TT_UNTIL
 #define IS_UNARY(t) (t >= TT_NOT && t <= TT_TYPE) || t == TT_ELSE
 #define IS_BRACKET(t) t >= TT_LPAREN && t <= TT_RCURLY
-#define IS_VALUE(t) t >= TT_INTEGER && t <= TT_ID ||IS_BRACKET(t)
+#define IS_VALUE(t) t >= TT_INTEGER && t <= TT_ID || IS_BRACKET(t)
 
 typedef struct __token {
 	enum TOKEN_TYPE type;
