@@ -25,5 +25,6 @@ void remove_node(ast_node* AST, int position) {
 }
 
 void free_node(ast_node* AST) {
+	if ((AST->node.type == TT_STRING || AST->node.type == TT_ID) && AST->node.data != NULL) free(AST->node.data);
 	if (AST->children != NULL) free_node(AST->children);
 }
