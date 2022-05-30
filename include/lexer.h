@@ -13,7 +13,7 @@ enum TOKEN_TYPE {
 		TT_EOL,
 		TT_COMMA,
 	// Literals
-		TT_INTEGER,
+		TT_NUMBER,
 		TT_STRING,
 		TT_BOOLEAN,
 		TT_ID,
@@ -42,10 +42,10 @@ enum TOKEN_TYPE {
 		TT_BACKSLASH,
 		TT_STAR,
 	// Unary operators
-		TT_NOT,
 		TT_PTR,
 		TT_ADDR,
 		TT_TYPE,
+		TT_PACKAGE,
 	// Parentheses
 		TT_LPAREN,
 		TT_RPAREN,
@@ -58,9 +58,9 @@ enum TOKEN_TYPE {
 #define IS_MULTI_CHAR(t) t == TT_LARROW || t == TT_RARROW || (t >= TT_DEQ && t <= TT_GEQ)
 #define IS_BIN_OP(t) t >= TT_EQU && t <= TT_STAR
 #define IS_FRONT_BIN_OP(t) t >= TT_ELIF && t <= TT_UNTIL
-#define IS_UNARY(t) (t >= TT_NOT && t <= TT_TYPE) || t == TT_ELSE
+#define IS_UNARY(t) (t >= TT_PTR && t <= TT_TYPE) || t == TT_ELSE
 #define IS_BRACKET(t) t >= TT_LPAREN && t <= TT_RCURLY
-#define IS_VALUE(t) t >= TT_INTEGER && t <= TT_ID || IS_BRACKET(t)
+#define IS_VALUE(t) t >= TT_NUMBER && t <= TT_ID || IS_BRACKET(t)
 
 typedef struct __token {
 	enum TOKEN_TYPE type;
@@ -84,10 +84,10 @@ static char* keyword_list[] = {
 	"until",
 	"or",
 	"and",
-	"not",
 	"ptr",
 	"addr",
 	"type",
+	"package",
 	'\0'
 };
 
