@@ -2,9 +2,9 @@
 
 int	is_higher_pres(int a, int b) {
 	switch (a) {
-		case TT_NOT:
 		case TT_PTR:
 		case TT_ADDR:
+		case TT_PACKAGE:
 		case TT_TYPE:
 			return b > TT_TYPE;
 		case TT_AND:
@@ -68,10 +68,10 @@ char* name_token(int t) {
 		case TT_RBRACKET: return "]";
 		case TT_SOF: return "SOF";
 		case TT_EOF: return "EOF";
-		case TT_NOT: return "not";
 		case TT_PTR: return "ptr";
 		case TT_ADDR: return "addr";
 		case TT_TYPE: return "type";
+		case TT_PACKAGE: return "package";
 		case TT_IF: return "if";
 		case TT_ELIF: return "elif";
 		case TT_ELSE: return "else";
@@ -89,13 +89,13 @@ char* name_token(int t) {
 void print_token(token t) {
 	switch (t.type) {
 	case TT_ID:
-		printf("id: %s", (char*)t.data);
+		printf("id:  %s", (char*)t.data);
 		break;
-	case TT_INTEGER:
-		printf("int: %i", (int)t.data);
+	case TT_NUMBER:
+		printf("num: %s", (char*)t.data);
 		break;
 	case TT_STRING:
-		printf("\"%s\"", (char*)t.data);
+		printf("str: %s", (char*)t.data);
 		break;
 	default: 
 		printf("%s", name_token((int)t.type));
@@ -111,14 +111,20 @@ char* __print_ast(ast_node tree, char* prefix, char* child_prefix) {
 	strcpy(prefix, child_prefix);
 
 	for (int i = 0; i < tree.child_count; i++) {
+		char n_prefix[256];
+		char n_child_prefix[256];
+
+		strcpy(n_prefix, prefix);
+		strcpy(n_child_prefix, child_prefix);
+
 		if (i == tree.child_count - 1){
-			strcat(prefix, "└── ");
-			strcat(child_prefix, "    ");
+			strcat(n_prefix, "└──");
+			strcat(n_child_prefix, "   ");
 		} else {
-			strcat(prefix, "├── ");
-			strcat(child_prefix, "│   ");
+			strcat(n_prefix, "├──");
+			strcat(n_child_prefix, "│  ");
 		}
-		__print_ast(tree.children[i], prefix, child_prefix);
+		__print_ast(tree.children[i], n_prefix, n_child_prefix);
 	}
 }
 void print_ast(ast_node tree) {
@@ -127,6 +133,7 @@ void print_ast(ast_node tree) {
 	__print_ast(tree, prefix, child_prefix);
 	printf("\n");
 }
+
 
 ast_node parse_token(ast_node* AST, ast_node proto_AST, int* pos, ast_node** mark_addr) {
 	ast_node* sub_mark_addr = NULL;
@@ -198,8 +205,8 @@ ast_node parse_token(ast_node* AST, ast_node proto_AST, int* pos, ast_node** mar
 	}  else if (proto_AST.children[*pos].node.type == TT_ID) {
 		append_node(AST, proto_AST.children[*pos]);
 		int starting_line = AST->children[AST->child_count - 1].node.line;
-		if (starting_line == proto_AST.children[(*pos)+1].node.line && 
-			proto_AST.children[(*pos)+1].node.type == TT_LPAREN) {
+		while (starting_line == proto_AST.children[(*pos)+1].node.line && 
+			IS_VALUE(proto_AST.children[(*pos)+1].node.type)) {
 			append_node(&(AST->children[AST->child_count - 1]), proto_AST.children[++(*pos)]);}
 	} else append_node(AST, proto_AST.children[*pos]);
 }
