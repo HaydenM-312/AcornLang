@@ -1,6 +1,7 @@
 #include "lexer.h"
 
-static bool not_isquote(char c) { return c != '"'; }
+static bool not_quote(char c) { return c != '"'; }
+static bool is_digit(char c) { return isdigit(c) || c == '.';}
 
 static char* read_on_condition(bool condition (char), char* text, size_t* start) {
 	char* buffer = malloc(1);
@@ -117,7 +118,7 @@ token_list* parse_to_token(char* text) {
 				if (IS_MULTI_CHAR(parse_char(text[i], text[i+1]))) i++;
 			} else if (text[i] == '"') {
 				i++;
-				char* buffer = read_on_condition(*not_isquote, text, &i);
+				char* buffer = read_on_condition(*not_quote, text, &i);
 				i++;
 				
 				append_token_list(tlist, generate_token(TT_STRING, _strdup(buffer), line, column));
@@ -143,11 +144,11 @@ token_list* parse_to_token(char* text) {
 				}
 
 				free(buffer);
-			} else if (isdigit(text[i])) {
-				char* buffer = read_on_condition(*isdigit, text, &i);
+			} else if (is_digit(text[i])) {
+				char* buffer = read_on_condition(*is_digit, text, &i);
 				
-				append_token_list(tlist, generate_token(TT_INTEGER, 
-					strtol(_strdup(buffer), NULL, 10), line, column));
+				append_token_list(tlist, generate_token(TT_NUMBER, 
+					_strdup(buffer), line, column));
 				free(buffer);
 			}
 	}
