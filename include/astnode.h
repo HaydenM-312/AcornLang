@@ -4,9 +4,10 @@
 #include "lexer.h"
 
 typedef struct __abstract_syntax_tree {
-	token node;
-	struct __abstract_syntax_tree* children;
-	int child_count;
+	token	 node;
+	struct __abstract_syntax_tree* 
+			children;
+	int 	child_count;
 } ast_node;
 
 ast_node	generate_node	(token);
