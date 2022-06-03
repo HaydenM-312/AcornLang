@@ -9,9 +9,12 @@ int main(int argc, char* argv[]) {
 		ast_node AST = parse(*tokenl);
 
 		print_ast(AST);
+		context_tree context_tree = contextualize(AST);
+		print_ctr(context_tree);
+
 
 		free(file);
-		free_node(&AST);
+		ast_free_node(&AST);
 		free_token_list(tokenl);
 	} else {
 		while (1) {
@@ -21,11 +24,14 @@ int main(int argc, char* argv[]) {
 
 			token_list* tokenl = parse_to_token(input);
 			ast_node AST = parse(*tokenl);
-
 			print_ast(AST);
+			context_tree context_tree = contextualize(AST);
+			print_ctr(context_tree);
 
-			free_node(&AST);
+
+			ast_free_node(&AST);
 			free_token_list(tokenl);
+			ctr_free_node(&context_tree);
 		}
 	}
 	
