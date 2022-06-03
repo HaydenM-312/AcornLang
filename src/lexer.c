@@ -23,51 +23,46 @@ static char* read_on_condition(bool condition (char), char* text, size_t* start)
 
 static int parse_char(char c1, char c2) {
 	switch (c1) {
-		case '(': return TT_LPAREN;
-		case ')': return TT_RPAREN;
-		case '[': return TT_LBRACKET;
-		case ']': return TT_RBRACKET;
-		case '{': return TT_LCURLY;
-		case '}': return TT_RCURLY;
-		case ',': return TT_COMMA;
-		case '+': return TT_PLUS;
+		case '(': return tt_lparen;
+		case ')': return tt_rparen;
+		case '[': return tt_lbracket;
+		case ']': return tt_rbracket;
+		case '{': return tt_lcurly;
+		case '}': return tt_rcurly;
+		case ',': return tt_comma;
+		case '.': return tt_dot;
+		case '+': return tt_plus;
 		case '-': {
 			switch (c2) {
-				case '>': return TT_RARROW;
-				default: return TT_MINUS;
+				case '>': return tt_rarrow;
+				default: return tt_minus;
 			}
 		}
-		case '/': return TT_SLASH;
-		case '\\': return TT_BACKSLASH;
-		case '*': return TT_STAR;
+		case '/': return tt_slash;
+		case '\\': return tt_backslash;
+		case '*': return tt_star;
 		case '=': {
 			switch (c2) {
-				case '=': return TT_DEQ;
-				default: return TT_EQU;
+				case '=': return tt_deq;
+				default: return tt_equ;
 			}
 		}
 		case '>': {
 			switch (c2) {
-				case '=': return TT_GEQ;
-				default: return TT_GREATER;
+				case '=': return tt_geq;
+				default: return tt_greater;
 			}
 		}
 		case '<': {
 			switch (c2) {
-				case '=': return TT_LEQ;
-				case '-': return TT_LARROW;
-				default: return TT_LESS;
+				case '=': return tt_leq;
+				case '-': return tt_larrow;
+				default: return tt_less;
 			}
 		}
-		case ':': return TT_COLON;
-		default: return TT_EOF;
+		case ':': return tt_colon;
+		default: return tt_eof;
 	}
-}
-
-static int get_keyword(int k) {
-	if (k <= 5) 	 return k + 8;
-	else if (k <= 7) return k + 12;
-	return k + 22;
 }
 
 token generate_token(enum TOKEN_TYPE _type, void* _data, int _line, int _column) {
@@ -103,7 +98,7 @@ void append_token_list(token_list* _tlist, token _token) {
 
 token_list* parse_to_token(char* text) {
 	token_list* tlist = malloc(sizeof(token_list));
-	generate_token_list(tlist, generate_token(TT_SOF, NULL, 0, 0));
+	generate_token_list(tlist, generate_token(tt_sof, NULL, 0, 0));
 	int line = 1;
 	int column = 1;
 	for (size_t i = 0; text[i] != 0; i++, column++) {
@@ -113,7 +108,7 @@ token_list* parse_to_token(char* text) {
 				line++;
 				column = 1;
 			}
-			else if (parse_char(text[i], text[i+1]) != TT_EOF) {
+			else if (parse_char(text[i], text[i+1]) != tt_eof) {
 				append_token_list(tlist, generate_token(parse_char(text[i], text[i+1]), NULL, line, column));
 				if (IS_MULTI_CHAR(parse_char(text[i], text[i+1]))) i++;
 			} else if (text[i] == '"') {
@@ -121,39 +116,78 @@ token_list* parse_to_token(char* text) {
 				char* buffer = read_on_condition(*not_quote, text, &i);
 				i++;
 				
-				append_token_list(tlist, generate_token(TT_STRING, _strdup(buffer), line, column));
+				append_token_list(tlist, generate_token(tt_string, _strdup(buffer), line, column));
 
 				free(buffer);
 			} 
 			else if (isalpha(text[i])) {
 				char* buffer = read_on_condition(*isalnum, text, &i);
-				int is_key_flag = 0;
 
-
-				for (int k = 0; keyword_list[k] != '\0'; k++) {
-					if (strcmp(keyword_list[k], buffer) == 0) {
-						append_token_list(tlist, 
-							generate_token(get_keyword(k), NULL, line, column));
-						is_key_flag = 1;
-					}
-				}
-
-				if (!is_key_flag) {
+				if (strcmp("let", buffer) == 0) {
 					append_token_list(tlist, 
-						generate_token(TT_ID, _strdup(buffer), line, column));
+						generate_token(tt_let, NULL, line, column));
+				} else if (strcmp("fn", buffer) == 0) {
+					append_token_list(tlist, 
+						generate_token(tt_fn, NULL, line, column));
+				} else if (strcmp("else", buffer) == 0) {
+					append_token_list(tlist, 
+						generate_token(tt_else, NULL, line, column));
+				} else if (strcmp("elif", buffer) == 0) {
+					append_token_list(tlist, 
+						generate_token(tt_elif, NULL, line, column));
+				} else if (strcmp("if", buffer) == 0) {
+					append_token_list(tlist, 
+						generate_token(tt_if, NULL, line, column));
+				} else if (strcmp("for", buffer) == 0) {
+					append_token_list(tlist, 
+						generate_token(tt_for, NULL, line, column));
+				} else if (strcmp("while", buffer) == 0) {
+					append_token_list(tlist, 
+						generate_token(tt_while, NULL, line, column));
+				} else if (strcmp("until", buffer) == 0) {
+					append_token_list(tlist, 
+						generate_token(tt_until, NULL, line, column));
+				} else if (strcmp("or", buffer) == 0) {
+					append_token_list(tlist, 
+						generate_token(tt_or, NULL, line, column));
+				} else if (strcmp("and", buffer) == 0) {
+					append_token_list(tlist, 
+						generate_token(tt_and, NULL, line, column));
+				} else if (strcmp("ptr", buffer) == 0) {
+					append_token_list(tlist, 
+						generate_token(tt_ptr, NULL, line, column));
+				} else if (strcmp("addr", buffer) == 0) {
+					append_token_list(tlist, 
+						generate_token(tt_addr, NULL, line, column));
+				} else if (strcmp("type", buffer) == 0) {
+					append_token_list(tlist, 
+						generate_token(tt_type, NULL, line, column));
+				} else if (strcmp("package", buffer) == 0) {
+					append_token_list(tlist, 
+						generate_token(tt_package, NULL, line, column));
+				} else if (strcmp("then", buffer) == 0) {
+					append_token_list(tlist, 
+						generate_token(tt_then, NULL, line, column));
+				} else if (strcmp("val", buffer) == 0) {
+					append_token_list(tlist, 
+						generate_token(tt_val, NULL, line, column));
+				}
+				else {
+					append_token_list(tlist, 
+						generate_token(tt_id, _strdup(buffer), line, column));
 				}
 
 				free(buffer);
 			} else if (is_digit(text[i])) {
 				char* buffer = read_on_condition(*is_digit, text, &i);
 				
-				append_token_list(tlist, generate_token(TT_NUMBER, 
+				append_token_list(tlist, generate_token(tt_number, 
 					_strdup(buffer), line, column));
 				free(buffer);
 			}
 	}
 
-	append_token_list(tlist, generate_token(TT_EOF, NULL, 0, 0));
+	append_token_list(tlist, generate_token(tt_eof, NULL, 0, 0));
 
 	return tlist;
 }
